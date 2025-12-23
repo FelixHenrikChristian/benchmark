@@ -1,5 +1,5 @@
 <mujoco model="8 Humanoids DenseRings">
-  <option timestep="0.005" solver="CG" integrator="implicitfast" jacobian="dense"/>
+  <option timestep="0.005" solver="CG" integrator="implicitfast"/>
 
   <size memory="300M"/>
 

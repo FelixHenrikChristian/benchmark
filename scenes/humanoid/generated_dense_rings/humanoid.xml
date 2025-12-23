@@ -16,7 +16,7 @@
 <mujoco model="Humanoid">
 <!--  <option timestep="0.005" solver="CG"/>-->
 <!--  <option timestep="0.005" solver="CG" integrator="RK4"/>-->
-  <option timestep="0.005" solver="CG" integrator="implicitfast" jacobian="dense"/>
+  <option timestep="0.005" solver="CG" integrator="implicitfast"/>
 <!--  iterations="20" ls_iterations="30"-->
   <visual>
     <map force="0.1" zfar="30"/>
