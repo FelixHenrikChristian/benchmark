@@ -1,4 +1,4 @@
-<mujoco model="9 Humanoids Square">
+<mujoco model="9 Humanoids Square (Dense)">
   
   <option timestep="0.005" solver="CG" integrator="implicit" jacobian="dense"/>
 
@@ -17,35 +17,35 @@
   </visual>
 
   <worldbody>
-    <geom name="floor" size="12.25 12.25 .05" type="plane" material="floor" condim="3"/>
+    <geom name="floor" size="11.125 11.125 .05" type="plane" material="floor" condim="3"/>
     <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5" dir="0 0 -1" castshadow="false"/>
     <light name="spotlight" mode="targetbodycom" target="world" diffuse="1 1 1" specular="0.3 0.3 0.3" pos="0 0 10" cutoff="60"/>
 
-    <frame pos="-1.5000 -1.5000 0">
+    <frame pos="-0.7500 -0.7500 0">
       <attach model="humanoid" body="torso" prefix="u0_"/>
     </frame>
-    <frame pos="-1.5000 0.0000 0">
+    <frame pos="-0.7500 0.0000 0">
       <attach model="humanoid" body="torso" prefix="u1_"/>
     </frame>
-    <frame pos="-1.5000 1.5000 0">
+    <frame pos="-0.7500 0.7500 0">
       <attach model="humanoid" body="torso" prefix="u2_"/>
     </frame>
-    <frame pos="0.0000 -1.5000 0">
+    <frame pos="0.0000 -0.7500 0">
       <attach model="humanoid" body="torso" prefix="u3_"/>
     </frame>
     <frame pos="0.0000 0.0000 0">
       <attach model="humanoid" body="torso" prefix="u4_"/>
     </frame>
-    <frame pos="0.0000 1.5000 0">
+    <frame pos="0.0000 0.7500 0">
       <attach model="humanoid" body="torso" prefix="u5_"/>
     </frame>
-    <frame pos="1.5000 -1.5000 0">
+    <frame pos="0.7500 -0.7500 0">
       <attach model="humanoid" body="torso" prefix="u6_"/>
     </frame>
-    <frame pos="1.5000 0.0000 0">
+    <frame pos="0.7500 0.0000 0">
       <attach model="humanoid" body="torso" prefix="u7_"/>
     </frame>
-    <frame pos="1.5000 1.5000 0">
+    <frame pos="0.7500 0.7500 0">
       <attach model="humanoid" body="torso" prefix="u8_"/>
     </frame>
   </worldbody>

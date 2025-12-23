@@ -9,10 +9,7 @@ def generate_scenes_custom(
     use_dense_jacobian=False
 ):
     """
-    生成 Humanoid 方阵场景。
-    
-    参数:
-    - use_dense_jacobian: True 则在 option 中添加 jacobian="dense"，False 则去掉。
+    生成 Humanoid 方阵场景的核心函数。
     """
     
     # --- 1. 环境准备 ---
@@ -20,44 +17,35 @@ def generate_scenes_custom(
         print(f"错误：当前目录下找不到 {base_model}，请确保脚本和 xml 在同一位置。")
         return
 
-    # 这里的文件夹名字可以根据配置自动变一下，方便区分？
-    # 或者就保持 'square'，由用户自己决定。这里为了简单，依然使用传入的 folder_name。
+    # 创建文件夹
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
-        print(f"已创建文件夹: {folder_name}")
+        print(f"\n>> 创建目录: {folder_name}")
     
     # 复制 base_model
     dst_model_path = os.path.join(folder_name, base_model)
     shutil.copy(base_model, dst_model_path)
-    print(f"已复制 {base_model} 到目标目录")
-
-    # --- 2. 构造 Option 字符串 ---
-    # 根据开关决定是否添加 jacobian="dense"
+    
+    # --- 2. 确定配置 ---
     if use_dense_jacobian:
         option_str = '<option timestep="0.005" solver="CG" integrator="implicit" jacobian="dense"/>'
         mode_desc = "Dense (密集矩阵)"
     else:
-        # 去掉 jacobian="dense"，MuJoCo 默认使用 sparse
         option_str = '<option timestep="0.005" solver="CG" integrator="implicit"/>'
-        mode_desc = "Sparse (稀疏矩阵 - 默认)"
+        mode_desc = "Sparse (默认稀疏)"
 
-    print(f"当前生成模式: {mode_desc}")
+    print(f"   模式: {mode_desc} | 正在生成场景...")
 
     # --- 3. 批量生成 ---
     for side_length in grid_sides:
         total_count = side_length * side_length
-        
-        # 也可以在文件名上加个标记方便区分，比如 9_humanoid_square_sparse.xml
-        # 这里为了保持你原有的命名习惯，还是保持原样，或者你可以手动修改下面这行：
         filename = f"{total_count}_humanoid_square.xml"
-        
         filepath = os.path.join(folder_name, filename)
         
         floor_half_width = (side_length * spacing) / 2 + 10
         offset = (side_length - 1) * spacing / 2.0
 
-        # XML 内容
-        xml_content = f"""<mujoco model="{total_count} Humanoids Square">
+        xml_content = f"""<mujoco model="{total_count} Humanoids Square ({'Dense' if use_dense_jacobian else 'Sparse'})">
   
   {option_str}
 
@@ -81,7 +69,6 @@ def generate_scenes_custom(
     <light name="spotlight" mode="targetbodycom" target="world" diffuse="1 1 1" specular="0.3 0.3 0.3" pos="0 0 10" cutoff="60"/>
 
 """
-        # 循环生成 frame
         for row in range(side_length):
             for col in range(side_length):
                 x = row * spacing - offset
@@ -100,29 +87,39 @@ def generate_scenes_custom(
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(xml_content)
         
-        print(f"  -> 生成完毕: {filename}")
+    print(f"   -> 完成。所有文件已保存至 {folder_name}/")
 
 # ==========================================
-# 配置参数
+# 主程序：自动生成两套数据
 # ==========================================
 
-# 1. 方阵边长列表
-sides = [3, 5, 8, 10, 15, 18, 20, 24]
+# 1. 配置基础参数
+SIDES = [3, 5, 8, 10, 15, 18, 20, 24] # 对应数量: 9, 25, 64, 100, 225, 324, 400, 576
+SPACING = 0.75
+BASE_FOLDER_NAME = "square"
 
-# 2. 是否使用 Dense Jacobian
-# True  = 添加 jacobian="dense" (更精确但大场景慢)
-# False = 不添加 (默认 Sparse，大场景更快)
-USE_DENSE = True 
+print("=== 开始批量生成任务 ===")
 
-# 3. 输出文件夹名称
-OUTPUT_FOLDER = "square" 
-
-# 执行
+# 2. 任务一：生成 Sparse (稀疏) 版本
+# 结果文件夹: square_sparse
 generate_scenes_custom(
-    sides, 
-    spacing=1.5, 
-    folder_name=OUTPUT_FOLDER, 
-    use_dense_jacobian=USE_DENSE
+    grid_sides=SIDES, 
+    spacing=SPACING, 
+    folder_name=f"{BASE_FOLDER_NAME}_sparse", 
+    base_model="humanoid.xml",
+    use_dense_jacobian=False
 )
 
-print("\n所有操作完成！")
+# 3. 任务二：生成 Dense (密集) 版本
+# 结果文件夹: square_dense
+generate_scenes_custom(
+    grid_sides=SIDES, 
+    spacing=SPACING, 
+    folder_name=f"{BASE_FOLDER_NAME}_dense", 
+    base_model="humanoid.xml",
+    use_dense_jacobian=True
+)
+
+print("\n=== 全部任务完成 ===")
+print(f"1. 稀疏矩阵场景位于: {BASE_FOLDER_NAME}_sparse/")
+print(f"2. 密集矩阵场景位于: {BASE_FOLDER_NAME}_dense/")
