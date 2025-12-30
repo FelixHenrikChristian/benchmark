@@ -1,0 +1,324 @@
+<mujoco model="100 UR5E Robots Square">
+  
+  <option timestep="0.005" solver="CG" integrator="implicit"/>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="floor" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3" rgb2=".2 .3 .4"/>
+    <material name="floor" texture="floor" texrepeat="1 1" texuniform="true" reflectance=".2"/>
+    <model name="ur5e" file="ur5e.xml"/>
+  </asset>
+
+  <visual>
+    <map force="0.1" zfar="100"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <quality shadowsize="4096"/>
+    <global offwidth="1920" offheight="1080"/>
+  </visual>
+
+  <worldbody>
+    <geom name="floor" size="10.0 10.0 .05" type="plane" material="floor" condim="3"/>
+    <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5" dir="0 0 -1" castshadow="false"/>
+    <light name="spotlight" mode="targetbodycom" target="world" diffuse="1 1 1" specular="0.3 0.3 0.3" pos="0 0 10" cutoff="60"/>
+    <frame pos="-5.4000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u0_"/>
+    </frame>
+    <frame pos="-4.2000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u1_"/>
+    </frame>
+    <frame pos="-3.0000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u2_"/>
+    </frame>
+    <frame pos="-1.8000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u3_"/>
+    </frame>
+    <frame pos="-0.6000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u4_"/>
+    </frame>
+    <frame pos="0.6000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u5_"/>
+    </frame>
+    <frame pos="1.8000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u6_"/>
+    </frame>
+    <frame pos="3.0000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u7_"/>
+    </frame>
+    <frame pos="4.2000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u8_"/>
+    </frame>
+    <frame pos="5.4000 -5.4000 0">
+      <attach model="ur5e" body="base" prefix="u9_"/>
+    </frame>
+    <frame pos="-5.4000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u10_"/>
+    </frame>
+    <frame pos="-4.2000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u11_"/>
+    </frame>
+    <frame pos="-3.0000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u12_"/>
+    </frame>
+    <frame pos="-1.8000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u13_"/>
+    </frame>
+    <frame pos="-0.6000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u14_"/>
+    </frame>
+    <frame pos="0.6000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u15_"/>
+    </frame>
+    <frame pos="1.8000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u16_"/>
+    </frame>
+    <frame pos="3.0000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u17_"/>
+    </frame>
+    <frame pos="4.2000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u18_"/>
+    </frame>
+    <frame pos="5.4000 -4.2000 0">
+      <attach model="ur5e" body="base" prefix="u19_"/>
+    </frame>
+    <frame pos="-5.4000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u20_"/>
+    </frame>
+    <frame pos="-4.2000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u21_"/>
+    </frame>
+    <frame pos="-3.0000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u22_"/>
+    </frame>
+    <frame pos="-1.8000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u23_"/>
+    </frame>
+    <frame pos="-0.6000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u24_"/>
+    </frame>
+    <frame pos="0.6000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u25_"/>
+    </frame>
+    <frame pos="1.8000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u26_"/>
+    </frame>
+    <frame pos="3.0000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u27_"/>
+    </frame>
+    <frame pos="4.2000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u28_"/>
+    </frame>
+    <frame pos="5.4000 -3.0000 0">
+      <attach model="ur5e" body="base" prefix="u29_"/>
+    </frame>
+    <frame pos="-5.4000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u30_"/>
+    </frame>
+    <frame pos="-4.2000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u31_"/>
+    </frame>
+    <frame pos="-3.0000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u32_"/>
+    </frame>
+    <frame pos="-1.8000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u33_"/>
+    </frame>
+    <frame pos="-0.6000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u34_"/>
+    </frame>
+    <frame pos="0.6000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u35_"/>
+    </frame>
+    <frame pos="1.8000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u36_"/>
+    </frame>
+    <frame pos="3.0000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u37_"/>
+    </frame>
+    <frame pos="4.2000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u38_"/>
+    </frame>
+    <frame pos="5.4000 -1.8000 0">
+      <attach model="ur5e" body="base" prefix="u39_"/>
+    </frame>
+    <frame pos="-5.4000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u40_"/>
+    </frame>
+    <frame pos="-4.2000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u41_"/>
+    </frame>
+    <frame pos="-3.0000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u42_"/>
+    </frame>
+    <frame pos="-1.8000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u43_"/>
+    </frame>
+    <frame pos="-0.6000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u44_"/>
+    </frame>
+    <frame pos="0.6000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u45_"/>
+    </frame>
+    <frame pos="1.8000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u46_"/>
+    </frame>
+    <frame pos="3.0000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u47_"/>
+    </frame>
+    <frame pos="4.2000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u48_"/>
+    </frame>
+    <frame pos="5.4000 -0.6000 0">
+      <attach model="ur5e" body="base" prefix="u49_"/>
+    </frame>
+    <frame pos="-5.4000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u50_"/>
+    </frame>
+    <frame pos="-4.2000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u51_"/>
+    </frame>
+    <frame pos="-3.0000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u52_"/>
+    </frame>
+    <frame pos="-1.8000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u53_"/>
+    </frame>
+    <frame pos="-0.6000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u54_"/>
+    </frame>
+    <frame pos="0.6000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u55_"/>
+    </frame>
+    <frame pos="1.8000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u56_"/>
+    </frame>
+    <frame pos="3.0000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u57_"/>
+    </frame>
+    <frame pos="4.2000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u58_"/>
+    </frame>
+    <frame pos="5.4000 0.6000 0">
+      <attach model="ur5e" body="base" prefix="u59_"/>
+    </frame>
+    <frame pos="-5.4000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u60_"/>
+    </frame>
+    <frame pos="-4.2000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u61_"/>
+    </frame>
+    <frame pos="-3.0000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u62_"/>
+    </frame>
+    <frame pos="-1.8000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u63_"/>
+    </frame>
+    <frame pos="-0.6000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u64_"/>
+    </frame>
+    <frame pos="0.6000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u65_"/>
+    </frame>
+    <frame pos="1.8000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u66_"/>
+    </frame>
+    <frame pos="3.0000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u67_"/>
+    </frame>
+    <frame pos="4.2000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u68_"/>
+    </frame>
+    <frame pos="5.4000 1.8000 0">
+      <attach model="ur5e" body="base" prefix="u69_"/>
+    </frame>
+    <frame pos="-5.4000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u70_"/>
+    </frame>
+    <frame pos="-4.2000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u71_"/>
+    </frame>
+    <frame pos="-3.0000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u72_"/>
+    </frame>
+    <frame pos="-1.8000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u73_"/>
+    </frame>
+    <frame pos="-0.6000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u74_"/>
+    </frame>
+    <frame pos="0.6000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u75_"/>
+    </frame>
+    <frame pos="1.8000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u76_"/>
+    </frame>
+    <frame pos="3.0000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u77_"/>
+    </frame>
+    <frame pos="4.2000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u78_"/>
+    </frame>
+    <frame pos="5.4000 3.0000 0">
+      <attach model="ur5e" body="base" prefix="u79_"/>
+    </frame>
+    <frame pos="-5.4000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u80_"/>
+    </frame>
+    <frame pos="-4.2000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u81_"/>
+    </frame>
+    <frame pos="-3.0000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u82_"/>
+    </frame>
+    <frame pos="-1.8000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u83_"/>
+    </frame>
+    <frame pos="-0.6000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u84_"/>
+    </frame>
+    <frame pos="0.6000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u85_"/>
+    </frame>
+    <frame pos="1.8000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u86_"/>
+    </frame>
+    <frame pos="3.0000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u87_"/>
+    </frame>
+    <frame pos="4.2000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u88_"/>
+    </frame>
+    <frame pos="5.4000 4.2000 0">
+      <attach model="ur5e" body="base" prefix="u89_"/>
+    </frame>
+    <frame pos="-5.4000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u90_"/>
+    </frame>
+    <frame pos="-4.2000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u91_"/>
+    </frame>
+    <frame pos="-3.0000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u92_"/>
+    </frame>
+    <frame pos="-1.8000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u93_"/>
+    </frame>
+    <frame pos="-0.6000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u94_"/>
+    </frame>
+    <frame pos="0.6000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u95_"/>
+    </frame>
+    <frame pos="1.8000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u96_"/>
+    </frame>
+    <frame pos="3.0000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u97_"/>
+    </frame>
+    <frame pos="4.2000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u98_"/>
+    </frame>
+    <frame pos="5.4000 5.4000 0">
+      <attach model="ur5e" body="base" prefix="u99_"/>
+    </frame>
+  </worldbody>
+</mujoco>
