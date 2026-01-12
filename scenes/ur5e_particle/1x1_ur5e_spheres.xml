@@ -1,6 +1,6 @@
 <mujoco model="Particle">
 
-  <include file="container.xml"/>
+  <include file="1x1_ur5e_container.xml"/>
 
   <size memory="1G"/>
 
