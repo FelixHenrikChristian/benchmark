@@ -1,12 +1,56 @@
 <mujoco model="2x2_ur5e_Shapes_NoCylinder">
 
-  <include file="2x2_ur5e_container.xml"/>
+  <statistic extent="4" meansize=".05"/>
 
   <size memory="1G"/>
 
-  <option solver="CG" tolerance="1e-6" timestep=".01"/>
+  <option timestep="0.005" solver="CG" integrator="implicit"/>
+
+  <visual>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <map shadowscale="0.5" zfar="40"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="64" height="64"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+    <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+    <!-- Load ur5e model for attach -->
+    <model name="ur5e" file="ur5e.xml"/>
+  </asset>
+
+  <default>
+    <default class="wall">
+      <geom type="plane" size="2 2 .05"/>
+    </default>
+  </default>
 
   <worldbody>
+    <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 10" castshadow="false"/>
+    <light diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 8"/>
+
+    <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" condim="1"/>
+
+    <!-- 2x2 UR5e robotic arms using frame + attach -->
+    <frame pos="-1 -1 0">
+      <attach model="ur5e" body="base" prefix="u0_"/>
+    </frame>
+    <frame pos="1 -1 0">
+      <attach model="ur5e" body="base" prefix="u1_"/>
+    </frame>
+    <frame pos="-1 1 0">
+      <attach model="ur5e" body="base" prefix="u2_"/>
+    </frame>
+    <frame pos="1 1 0">
+      <attach model="ur5e" body="base" prefix="u3_"/>
+    </frame>
+
+    <!-- Pit walls (4m x 4m) -->
+    <geom name="+x" class="wall" zaxis="1 0 0"  pos="-2 0 -.25"/>
+    <geom name="-x" class="wall" zaxis="-1 0 0" pos="2 0 -.25"/>
+    <geom name="+y" class="wall" zaxis="0 1 0"  pos="0 -2 -.25"/>
+    <geom name="-y" class="wall" zaxis="0 -1 0" pos="0 2 -.25"/>
+
     <!-- Particle group 1 (red spheres) - above u0 at (-1, -1) -->
     <replicate count="10" offset=".18 0 0">
       <replicate count="10" offset="0 .18 0">
