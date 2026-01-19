@@ -7,29 +7,33 @@ from typing import Dict, Optional, List, Any
 DEFAULT_ENGINE_OPTIONS = {
     "mujoco": {
         "option": {
+            "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "cuda_mujoco": {
         "option": {
+            "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "mjx": {
         "option": {
+            "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "mujoco_warp": {
         "option": {
+            "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         },
         "custom": {
-            "ls_parallel": "1"  # 针对 mujoco_warp 的并行配置
+            "ls_parallel": "1" 
         }
     }
 }
@@ -66,6 +70,7 @@ def modify_option_tag(xml_content: str, option_configs: Dict[str, Optional[str]]
             elif re.search(attr_pattern, option_tag):
                 option_tag = re.sub(attr_pattern, f'{attr_name}="{attr_value}"', option_tag)
             else:
+                # 如果标签内没有该属性，则添加进去
                 option_tag = option_tag.replace('<option ', f'<option {attr_name}="{attr_value}" ', 1)
         return option_tag + '/>'
     
@@ -76,7 +81,6 @@ def modify_custom_section(xml_content: str, custom_configs: Dict[str, str]) -> s
     if not custom_configs:
         return xml_content
 
-    # 确保存在 <custom> 块
     if '<custom>' not in xml_content:
         if '</mujoco>' in xml_content:
             xml_content = xml_content.replace('</mujoco>', '  <custom>\n  </custom>\n</mujoco>')
