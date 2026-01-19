@@ -29,16 +29,32 @@ DEFAULT_ENGINE_OPTIONS = {
             "jacobian": None,
         },
         "custom": {
-            "ls_parallel": "1"  # 新增：针对 mujoco_warp 的并行配置
+            "ls_parallel": "1"  # 针对 mujoco_warp 的并行配置
         }
     }
 }
 
 def modify_option_tag(xml_content: str, option_configs: Dict[str, Optional[str]]) -> str:
-    """修改 <option> 标签属性"""
+    """修改 <option> 标签属性。如果不存在则自动创建。"""
     if not option_configs:
         return xml_content
         
+    # 1. 如果完全没有 <option> 标签，则自动插入一个
+    if '<option' not in xml_content:
+        # 构建属性字符串，过滤掉 None
+        attr_str = " ".join([f'{k}="{v}"' for k, v in option_configs.items() if v is not None])
+        if not attr_str:
+            return xml_content
+        
+        new_tag = f'  <option {attr_str}/>'
+        # 在 <mujoco> 根标签后插入
+        if '<mujoco' in xml_content:
+            xml_content = re.sub(r'(<mujoco[^>]*>)', r'\1\n' + new_tag, xml_content, count=1)
+        else:
+            xml_content = new_tag + "\n" + xml_content
+        return xml_content
+
+    # 2. 如果已存在标签，执行原有的正则替换逻辑
     option_pattern = r'(<option\s+[^>]*)/>'
     
     def replace_option(match):
@@ -56,32 +72,24 @@ def modify_option_tag(xml_content: str, option_configs: Dict[str, Optional[str]]
     return re.sub(option_pattern, replace_option, xml_content)
 
 def modify_custom_section(xml_content: str, custom_configs: Dict[str, str]) -> str:
-    """
-    修改或添加 <custom> 块中的 <numeric> 标签。
-    格式：<numeric name="ls_parallel" data="1"/>
-    """
+    """修改或添加 <custom> 块中的 <numeric> 标签。"""
     if not custom_configs:
         return xml_content
 
-    # 1. 确保存在 <custom> 块
+    # 确保存在 <custom> 块
     if '<custom>' not in xml_content:
-        # 如果没有 custom 块，就在 </mujoco> 之前插入一个
         if '</mujoco>' in xml_content:
             xml_content = xml_content.replace('</mujoco>', '  <custom>\n  </custom>\n</mujoco>')
         else:
-            # 极简 XML 情况
             xml_content += '\n<custom>\n</custom>'
 
     for name, value in custom_configs.items():
-        # 匹配已有的 <numeric name="xxx" ... />
         numeric_pattern = rf'<numeric\s+name="{name}"\s+data="[^"]*"\s*/>'
         new_numeric_tag = f'<numeric name="{name}" data="{value}"/>'
         
         if re.search(numeric_pattern, xml_content):
-            # 替换已有项
             xml_content = re.sub(numeric_pattern, new_numeric_tag, xml_content)
         else:
-            # 插入新项到 <custom> 块内
             xml_content = xml_content.replace('<custom>', f'<custom>\n    {new_numeric_tag}')
 
     return xml_content
@@ -120,11 +128,8 @@ def prepare_scenes_for_all_engines(
                     with open(filepath, 'r', encoding='utf-8') as f:
                         content = f.read()
                     
-                    # 1. 修改 option
                     if "option" in config:
                         content = modify_option_tag(content, config["option"])
-                    
-                    # 2. 修改 custom (新增逻辑)
                     if "custom" in config:
                         content = modify_custom_section(content, config["custom"])
                     
@@ -139,14 +144,13 @@ def prepare_scenes_for_all_engines(
 
 if __name__ == "__main__":
     # --- 自定义配置区域 ---
-    SOURCE_DIR = "cuda_mujoco/paper_experiments/model/g1_dense_flat"  # 源场景文件路径
-    TEMP_DIR = "temp_test_scenes"               # 生成的测试场景存放路径
+    SOURCE_DIR = "cuda_mujoco/paper_experiments/model/g1_dense_flat" 
+    TEMP_DIR = "temp_test_scenes"               
     ENGINES_TO_GENERATE = ["mujoco", "mujoco_warp", "mjx", "cuda_mujoco"] 
     # --------------------
 
     print(f"🚀 开始单独生成场景文件进行测试...")
     
-    # 调用准备函数
     result_dirs = prepare_scenes_for_all_engines(
         source_dir=SOURCE_DIR,
         temp_dir=TEMP_DIR,
@@ -154,12 +158,6 @@ if __name__ == "__main__":
         engine_options=DEFAULT_ENGINE_OPTIONS
     )
     
-    print("✅ 生成完成！你可以前往以下目录查看生成的 XML 文件：")
+    print("✅ 生成完成！")
     for engine, path in result_dirs.items():
         print(f"   - {engine}: {os.path.abspath(path)}")
-        
-    # 验证生成的 mujoco_warp 文件是否包含新的 custom 标签
-    warp_xml_path = os.path.join(TEMP_DIR, "mujoco_warp")
-    if os.path.exists(warp_xml_path):
-        print(f"\n💡 提示：请检查 {warp_xml_path} 下的 XML，")
-        print(f"   确认是否已包含 <numeric name=\"ls_parallel\" data=\"1\"/>")
