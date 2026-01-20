@@ -8,278 +8,215 @@ from scene_converter import prepare_scenes_for_all_engines, DEFAULT_ENGINE_OPTIO
 # ================= 配置区域 =================
 
 CONFIG = {
-    "global_steps": 1000,  # 全局测试步数
-    "ctrlnoise": 0.4,      # 控制噪声幅度 (0.0-1.0)，用于增加场景复杂度
-    
-    # [新增] 统一的源场景目录（所有引擎共用）
-    "source_scene_dir": "scenes/humanoid/generated_dense_rings/",
-    
-    # [新增] 临时目录，存放各引擎的场景副本
+    "global_steps": 1000,
+    "ctrlnoise": 0.0,
+    "timeout_per_scene": 0,  # 每个场景限时（秒），设为 0 则不限时
+    # "source_scene_dir": "cuda_mujoco/paper_experiments/model/g1_dense_flat",
+    "source_scene_dir": "cuda_mujoco/paper_experiments/model/g1_terrian",
     "temp_dir": "temp",
+    "output_file": "benchmark_results.xlsx",
     
-    # [移除] 这里的 scenes 列表不再需要，脚本会自动去下面的文件夹里找
-    # "scenes": [...], 
-
-    # 引擎配置
-    # scene_prefix 将由脚本自动设置为 temp/{engine_name}/
-    # ctrlnoise 支持情况：
-    #   - mujoco: ✅ 支持 (命令行参数)
-    #   - cuda_mujoco: ✅ 支持 (命令行参数)
-    #   - mjx: ❌ 不支持 
-    #   - mujoco_warp: ❌ 不支持 
     "engines": {
         "mujoco": {
             "enabled": True,
-            # testspeed 参数顺序: modelfile [nstep nthread ctrlnoise]
             "cmd_template": "mujoco/build/bin/testspeed {full_path} {steps} 1 {ctrlnoise}",
             "shell": False
+        },
+        "cuda_mujoco": {
+            "enabled": True,
+            "cmd_template": "cuda_mujoco/build/bin/01A_testspeed_single {full_path} {steps} 1 {ctrlnoise}",
+            "shell": False
+        },
+        "mujoco_warp": {
+            "enabled": True,
+            "cmd_template": "source env/bin/activate && mjwarp-testspeed {full_path} --event_trace=True --nworld=1 --nstep={steps}",
+            "cwd": "mujoco_warp",
+            "shell": True 
         },
         "mjx": {
             "enabled": True,
             "cmd_template": "mjx-testspeed --mjcf {full_path} --base_path . --batch_size 1 --nstep {steps}",
             "shell": False
         },
-        "mujoco_warp": {
-            "enabled": True,
-            "cmd_template": "source env/bin/activate && mjwarp-testspeed {full_path} --event_trace=True --nworld=1 --nstep={steps}",
-            "cwd": "mujoco_warp",  # 切换工作目录
-            "shell": True 
-        },
-        "cuda_mujoco": {
-            "enabled": True,
-            "cmd_template": "cuda_mujoco/build/bin/testspeed_cuda {full_path} {steps} 1 {ctrlnoise}",
-            "shell": False
-        }
+
     }
 }
 
-# ================= 解析逻辑 =================
+# ================= 辅助逻辑 =================
+
+def truncate_overflow_logs(text):
+    """
+    针对 mujoco warp 的日志清洗：保留前5句和后5句 overflow 消息。
+    """
+    if not text: return ""
+    lines = text.splitlines()
+    pattern = re.compile(r"broadphase overflow - please increase nconmax to \d+ or naconmax to \d+")
+    
+    overflow_indices = [i for i, line in enumerate(lines) if pattern.search(line)]
+    
+    if len(overflow_indices) > 10:
+        keep_start = set(overflow_indices[:5])
+        keep_end = set(overflow_indices[-5:])
+        
+        new_lines = []
+        has_inserted_ellipsis = False
+        
+        for i, line in enumerate(lines):
+            if i in overflow_indices:
+                if i in keep_start or i in keep_end:
+                    new_lines.append(line)
+                elif not has_inserted_ellipsis:
+                    new_lines.append("... [此处省略若干条 broadphase overflow 消息] ...")
+                    has_inserted_ellipsis = True
+            else:
+                new_lines.append(line)
+        return "\n".join(new_lines)
+    return text
 
 def parse_output(engine_name, stdout_text):
-    """
-    根据不同引擎的输出格式解析关键数据。
-    """
-    data = {
-        "Simulation Time (s)": None,
-        "SPS": None,
-        "RTF": None,
-        "Time per Step (µs)": None
-    }
+    data = {"Simulation Time (s)": None, "SPS": None, "RTF": None, "Time per Step (µs)": None}
+    if not stdout_text: return data
     
-    patterns = {}
-    if engine_name == "mujoco":
-        patterns = {
+    patterns = {
+        "mujoco": {
             "Simulation Time (s)": r"Simulation time\s+:\s+([\d\.]+)\s+s",
             "SPS": r"Steps per second\s+:\s+([\d\.]+)",
             "RTF": r"Realtime factor\s+:\s+([\d\.]+)\s+x",
             "Time per Step (µs)": r"Time per step\s+:\s+([\d\.]+)\s+µs"
-        }
-    elif engine_name == "mjx":
-        patterns = {
+        },
+        "mjx": {
             "Simulation Time (s)": r"Total simulation time:\s+([\d\.]+)\s+s",
             "SPS": r"Total steps per second:\s+([\d\.]+)",
             "RTF": r"Total realtime factor:\s+([\d\.]+)\s+x",
             "Time per Step (µs)": r"Total time per step:\s+([\d\.]+)\s+µs"
-        }
-    elif engine_name == "mujoco_warp":
-        patterns = {
+        },
+        "mujoco_warp": {
             "Simulation Time (s)": r"Total simulation time:\s+([\d\.]+)\s+s",
             "SPS": r"Total steps per second:\s+([\d\.]+)",
             "RTF": r"Total realtime factor:\s+([\d\.]+)\s+x",
             "Time per Step (ns)": r"Total time per step:\s+([\d\.]+)\s+ns" 
-        }
-    elif engine_name == "cuda_mujoco":
-        patterns = {
+        },
+        "cuda_mujoco": {
             "Simulation Time (s)": r"Total wall time\s+:\s+([\d\.]+)\s+s",
             "SPS": r"Steps per second\s+:\s+([\d\.]+)",
             "RTF": r"Realtime factor\s+:\s+([\d\.]+)\s+x",
             "Time per Step (µs)": r"Time per step\s+:\s+([\d\.]+)\s+µs"
         }
+    }
 
-    for key, pattern in patterns.items():
-        match = re.search(pattern, stdout_text)
-        if match:
-            val = float(match.group(1))
-            if key == "Time per Step (ns)":
-                data["Time per Step (µs)"] = val / 1000.0
-            else:
-                data[key] = val
-
+    if engine_name in patterns:
+        for key, pattern in patterns[engine_name].items():
+            match = re.search(pattern, stdout_text)
+            if match:
+                val = float(match.group(1))
+                if key == "Time per Step (ns)":
+                    data["Time per Step (µs)"] = val / 1000.0
+                else:
+                    data[key] = val
     return data
 
-# ================= 主执行逻辑 (已修改) =================
-
-def run_benchmarks():
-    summary_results = []
-    detailed_logs = []
-    
-    print(f"🚀 开始执行测试...")
-    
-    # 0. 获取启用的引擎列表
-    enabled_engines = [
-        name for name, cfg in CONFIG['engines'].items() 
-        if cfg.get("enabled", True)
-    ]
-    
-    if not enabled_engines:
-        print("⚠️ 没有启用任何引擎")
-        return summary_results, detailed_logs
-    
-    # 1. 准备场景文件（复制并修改）
-    engine_scene_dirs = prepare_scenes_for_all_engines(
-        source_dir=CONFIG['source_scene_dir'],
-        temp_dir=CONFIG['temp_dir'],
-        enabled_engines=enabled_engines
-    )
-    
-    # 2. 遍历引擎进行测试
-    for engine_name, engine_cfg in CONFIG['engines'].items():
-        if not engine_cfg.get("enabled", True):
-            continue
-        
-        print(f"\n[Engine] {engine_name}")
-
-        # 3. 确定场景目录（从临时目录获取）
-        base_cwd = engine_cfg.get("cwd", ".") 
-        
-        # 获取该引擎的临时场景目录
-        if engine_name not in engine_scene_dirs:
-            print(f"  ❌ Error: 引擎 {engine_name} 的场景目录未准备，跳过")
-            continue
-        
-        temp_scene_dir = engine_scene_dirs[engine_name]
-        
-        # 对于有 cwd 的引擎，scene_prefix 需要是相对于 cwd 的路径
-        if base_cwd != ".":
-            scene_prefix = os.path.relpath(temp_scene_dir, base_cwd)
-        else:
-            scene_prefix = temp_scene_dir
-        
-        scan_dir = temp_scene_dir
-        
-        # 检查目录是否存在
-        if not os.path.exists(scan_dir):
-            print(f"  ❌ Error: 目录不存在，跳过: {scan_dir}")
-            continue
-            
-        # 4. 扫描该目录下的所有 XML 文件
-        try:
-            files = [f for f in os.listdir(scan_dir) if f.endswith('.xml')]
-            
-            # === 修复的排序逻辑 ===
-            # 逻辑：如果没有数字，视作 -1（排在最前）；如果有数字，按数字大小排。
-            # 返回元组 (数字, 文件名) 确保类型一致且能处理同名冲突。
-            def get_sort_key(filename):
-                match = re.search(r'\d+', filename)
-                if match:
-                    return (int(match.group()), filename)
-                return (-1, filename) # 也就是 humanoid.xml 会被视为 -1，排在 8_humanoids.xml 之前
-
-            files.sort(key=get_sort_key)
-            # ===================
-            
-            if not files:
-                print(f"  ⚠️ Warning: 目录 {scan_dir} 下没有找到 .xml 文件")
-                continue
-                
-            print(f"  -> 在 {scan_dir} 扫描到 {len(files)} 个场景文件")
-            
-        except Exception as e:
-            print(f"  ❌ Error scanning directory: {e}")
-            # 打印详细堆栈以便调试（可选）
-            # import traceback
-            # traceback.print_exc()
-            continue
-
-        # 5. 遍历找到的文件进行测试
-        for filename in files:
-            scene_name_no_ext = os.path.splitext(filename)[0]
-            print(f"    -> Testing Scene: {scene_name_no_ext}")
-            
-            full_path_for_cmd = os.path.join(scene_prefix, filename)
-            cwd = engine_cfg.get("cwd", os.getcwd())
-            use_shell = engine_cfg.get("shell", False)
-            
-            cmd = engine_cfg["cmd_template"].format(
-                full_path=full_path_for_cmd, 
-                steps=CONFIG["global_steps"],
-                xml_path=full_path_for_cmd,
-                ctrlnoise=CONFIG.get("ctrlnoise", 0.01)
-            )
-            
-            try:
-                if use_shell:
-                    process = subprocess.run(
-                        cmd, 
-                        shell=True, 
-                        executable='/bin/bash',
-                        cwd=cwd,
-                        stdout=subprocess.PIPE, 
-                        stderr=subprocess.STDOUT, 
-                        text=True
-                    )
-                else:
-                    cmd_parts = cmd.split()
-                    process = subprocess.run(
-                        cmd_parts, 
-                        cwd=cwd,
-                        stdout=subprocess.PIPE, 
-                        stderr=subprocess.STDOUT, 
-                        text=True
-                    )
-                
-                output = process.stdout
-                metrics = parse_output(engine_name, output)
-                
-                result_row = {
-                    "Scene": scene_name_no_ext,
-                    "Engine": engine_name,
-                    "Steps": CONFIG["global_steps"],
-                    **metrics
-                }
-                summary_results.append(result_row)
-                
-                detailed_logs.append({
-                    "Scene": scene_name_no_ext,
-                    "Engine": engine_name,
-                    "Raw Output": output
-                })
-                
-                print(f"       Done. SPS: {metrics.get('SPS', 'N/A')}")
-
-            except Exception as e:
-                print(f"       ERROR: {e}")
-                summary_results.append({
-                    "Scene": scene_name_no_ext,
-                    "Engine": engine_name,
-                    "Error": str(e)
-                })
-
-    return summary_results, detailed_logs
-
-# ================= 保存逻辑 (保持不变) =================
-
-def save_to_excel(summary, logs, filename="benchmark_results.xlsx"):
-    if not summary:
-        print("\n⚠️ 没有数据可保存")
-        return
-
+def save_to_excel(summary, logs, filename):
+    """测一个写一个，支持实时查看结果。"""
+    if not summary: return
     df_summary = pd.DataFrame(summary)
     df_logs = pd.DataFrame(logs)
-    
-    # 调整列顺序
-    cols = ["Scene", "Engine", "Steps", "Simulation Time (s)", "SPS", "RTF", "Time per Step (µs)"]
+    cols = ["Scene", "Engine", "Steps", "Simulation Time (s)", "SPS", "RTF", "Time per Step (µs)", "Status"]
     existing_cols = [c for c in cols if c in df_summary.columns]
-    # 把剩余的列（比如 Error）也加上
     remaining_cols = [c for c in df_summary.columns if c not in cols]
     df_summary = df_summary[existing_cols + remaining_cols]
 
     with pd.ExcelWriter(filename, engine='openpyxl') as writer:
         df_summary.to_excel(writer, sheet_name='Summary', index=False)
         df_logs.to_excel(writer, sheet_name='Detailed_Logs', index=False)
+
+# ================= 主执行逻辑 =================
+
+def run_benchmarks():
+    summary_results = []
+    detailed_logs = []
     
-    print(f"\n✅ 测试完成！结果已保存至: {filename}")
+    enabled_engines = [name for name, cfg in CONFIG['engines'].items() if cfg.get("enabled", True)]
+    engine_scene_dirs = prepare_scenes_for_all_engines(
+        source_dir=CONFIG['source_scene_dir'],
+        temp_dir=CONFIG['temp_dir'],
+        enabled_engines=enabled_engines
+    )
+    
+    timeout_val = CONFIG.get("timeout_per_scene", 0)
+    if timeout_val <= 0: timeout_val = None
+
+    for engine_name, engine_cfg in CONFIG['engines'].items():
+        if not engine_cfg.get("enabled", True): continue
+        
+        print(f"\n[Engine] {engine_name}")
+        base_cwd = engine_cfg.get("cwd", ".") 
+        temp_scene_dir = engine_scene_dirs.get(engine_name)
+        if not temp_scene_dir: continue
+        
+        scene_prefix = os.path.relpath(temp_scene_dir, base_cwd) if base_cwd != "." else temp_scene_dir
+        
+        def get_sort_key(filename):
+            match = re.search(r'\d+', filename)
+            return (int(match.group()), filename) if match else (-1, filename)
+
+        files = sorted([f for f in os.listdir(temp_scene_dir) if f.endswith('.xml')], key=get_sort_key)
+
+        for filename in files:
+            scene_name_no_ext = os.path.splitext(filename)[0]
+            print(f"    -> Testing Scene: {scene_name_no_ext}", end="", flush=True)
+            
+            full_path_for_cmd = os.path.join(scene_prefix, filename)
+            cwd = engine_cfg.get("cwd", os.getcwd())
+            use_shell = engine_cfg.get("shell", False)
+            
+            cmd_str = engine_cfg["cmd_template"].format(
+                full_path=full_path_for_cmd, steps=CONFIG["global_steps"], ctrlnoise=CONFIG.get("ctrlnoise", 0.0)
+            )
+            
+            # --- 修复核心：非 shell 模式必须使用列表 ---
+            run_cmd = cmd_str if use_shell else cmd_str.split()
+            
+            output = ""
+            status = "Success"
+            try:
+                process = subprocess.run(
+                    run_cmd, 
+                    shell=use_shell, 
+                    executable='/bin/bash' if use_shell else None,
+                    cwd=cwd, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.STDOUT, 
+                    text=True, 
+                    timeout=timeout_val
+                )
+                output = process.stdout
+            except subprocess.TimeoutExpired as e:
+                # 捕获已有的输出并标记超时
+                output = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+                output += "\n--- TIMEOUT EXPIRED ---"
+                status = "Timeout"
+                print(" | ⏱️ TIMEOUT", end="")
+            except Exception as e:
+                output = str(e)
+                status = "Error"
+                print(f" | ❌ ERROR: {e}", end="")
+
+            if engine_name == "mujoco_warp":
+                output = truncate_overflow_logs(output)
+
+            metrics = parse_output(engine_name, output)
+            result_row = {
+                "Scene": scene_name_no_ext, "Engine": engine_name, "Steps": CONFIG["global_steps"],
+                **metrics, "Status": status
+            }
+            summary_results.append(result_row)
+            detailed_logs.append({"Scene": scene_name_no_ext, "Engine": engine_name, "Raw Output": output})
+            
+            # 实时保存到文件
+            save_to_excel(summary_results, detailed_logs, CONFIG["output_file"])
+            print(f" | SPS: {metrics.get('SPS', 'N/A')}")
+
+    print(f"\n✅ 测试全流程结束。结果已保存至 {CONFIG['output_file']}")
 
 if __name__ == "__main__":
-    summary_data, log_data = run_benchmarks()
-    save_to_excel(summary_data, log_data)
+    run_benchmarks()

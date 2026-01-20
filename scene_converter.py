@@ -7,28 +7,28 @@ from typing import Dict, Optional, List, Any
 DEFAULT_ENGINE_OPTIONS = {
     "mujoco": {
         "option": {
-            "timestep": "0.005",
+            # "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "cuda_mujoco": {
         "option": {
-            "timestep": "0.005",
+            # "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "mjx": {
         "option": {
-            "timestep": "0.005",
+            # "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         }
     },
     "mujoco_warp": {
         "option": {
-            "timestep": "0.005",
+            # "timestep": "0.005",
             "integrator": "implicitfast",
             "jacobian": None,
         },
@@ -148,8 +148,9 @@ def prepare_scenes_for_all_engines(
 
 if __name__ == "__main__":
     # --- 自定义配置区域 ---
-    SOURCE_DIR = "cuda_mujoco/paper_experiments/model/g1_dense_flat" 
-    TEMP_DIR = "temp_test_scenes"               
+    # SOURCE_DIR = "cuda_mujoco/paper_experiments/model/g1_dense_flat" 
+    # SOURCE_DIR = "cuda_mujoco/paper_experiments/model/g1_terrian" 
+    TEMP_DIR = "temp"               
     ENGINES_TO_GENERATE = ["mujoco", "mujoco_warp", "mjx", "cuda_mujoco"] 
     # --------------------
 
